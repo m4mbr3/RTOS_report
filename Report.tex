@@ -1,0 +1,192 @@
+% VDE Template for EUSAR Papers
+% Provided by Barbara Lang und Siegmar Lampe
+% University of Bremen, January 2002
+% English version by Jens Fischer
+% German Aerospace Center (DLR), December 2005
+% Additional modifications by Matthias Wei{\ss}
+% FGAN, January 2009
+
+%-----------------------------------------------------------------------------
+% Type of publication
+\documentclass[a4paper,10pt]{article}
+%-----------------------------------------------------------------------------
+% Other packets: Most packets may be downloaded from www.dante.de and
+% "tcilatex.tex" can be found at (December 2005):
+% http://www.mackichan.com/techtalk/v30/UsingFloat.htm
+% Not all packets are necessarily needed:
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+%\usepackage{ngerman} % in german language if required
+\usepackage[nooneline,bf]{caption} % Figure descriptions from left margin
+\usepackage{times}
+\usepackage{multicol}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[dvips]{graphicx}
+\usepackage{epsfig}
+\input{tcilatex}
+%-----------------------------------------------------------------------------
+% Page Setup
+\textheight24cm \textwidth17cm \columnsep6mm
+\oddsidemargin-5mm                 % depending on print drivers!
+\evensidemargin-5mm                % required margin size: 2cm
+\headheight0cm \headsep0cm \topmargin0cm \parindent0cm
+\pagestyle{empty}                  % delete footer and header
+%----------------------------------------------------------------------------
+% Environment definitions
+\newenvironment*{mytitle}{\begin{LARGE}\bf}{\end{LARGE}\\}%
+\newenvironment*{mysubtitle}{\bf}{\\[1.5ex]}%
+\newenvironment*{myabstract}{\begin{Large}\bf}{\end{Large}\\[2.5ex]}%
+%-----------------------------------------------------------------------------
+% Using Pictures and tables:
+% - Instead "table" write "tablehere" without parameters
+% - Instead "figure" write "figurehere " without parameters
+% - Please insert a blank line before and after \begin{figuerhere} ... \end{figurehere}
+%
+% CAUTION:   The first reference to a figure/table in the text should be formatted fat.
+%
+\makeatletter
+\newenvironment{tablehere}{\def\@captype{table}}{}
+\newenvironment{figurehere}{\def\@captype{figure}\vspace{2ex}}{\vspace{2ex}}
+\makeatother
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+% Please use capital letters in the beginning of important words as for example
+\begin{mytitle}Heterogeneous Scheduler\end{mytitle}
+\begin{mysubtitle}Scheduling support for heterogeneous hardware accelerators under linux\end{mysubtitle}
+%
+% Please do not insert a line here
+%
+\\
+Mambretti Andrea\\
+Matr. 783286, (m4mbr3@gmail.com)\\
+\begin{flushright}
+\emph{Report for the master course of real time operative system}\\
+\emph{Reviser: PhD. Patrick Bellasi (bellasi@elet.polimi.it)}
+\end{flushright}
+
+Received: March, 06 2013\\
+\hspace{10ex}
+
+\begin{myabstract} Abstract \end{myabstract}
+During these days, computers are more often provided with dedicated graphic cards. Modern GPUs are
+designed to exploit an high level of parallelism and compared to a standard CPU are faster
+(sometimes more than 10X) and more expensive. 
+A common user, that is not either playing or doing some graphic task, use the ~10\% of GPUs 
+computational capacity. The main goal of this project is to fix, deploy and test an heterogeneous 
+scheduler that allows linux to use both CPUs and GPUs at the same time. The implementation of this 
+scheduler is in both kernel and user space and allow the tasks migration using the cuda libraries.
+
+
+\vspace{4ex}	% Please do not remove or reduce this space here.
+\begin{multicols}{2}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{myabstract} Introduction \end{myabstract}
+Since the producers of GPUs has released the first version of API to program directly those 
+components, researchers and industries has started to produce hybrid solution of scheduler. 
+The main goal of these solutions is the performance improvement. What is analyzed in this project is 
+a system that use the CUDA API provided by NVIDIA and the linux kernel to create a huge scheduler
+being able to migrate tasks between GPUs/CPUs and viceversa. This report is organized in such a way
+that the first part provides an high level description of the architecture concepts. The 
+second describes how this concepts has been implemented and tested. The third figures out step by step
+the installation phases. 
+
+
+
+
+\section{Architercture concepts}
+
+%-----------------------------------------------------------------------------
+\subsection{Heterogeneous system definition and problems}
+% Please avoid separations in titles
+% and separate text manually
+The scheduling concepts presented in this project are based on heterogeneous systems that are 
+those systems where there are non-uniform  computing unit which include single- or multi-core CPUs
+operating in SMP mode and an arbitrary combination of additional hardware accelerators such as GPUs,
+DSPs or FPGA.
+Scheduling such systems is more difficult due to several reasons:\\
+1) In general accelerator doesn't have shared memory space with CPU cores so every time two processes 
+that are running on different computational unit, one on CPU and one on an accelerator, has to share
+some piece of data they are obligated to trasfer the information. The scheduler in this case has to 
+consider the transfer time between them. These overheads have to be known and used as input for a
+scheduling decision in heterogeneous systems. Futhermore this problem introduces a course granularity 
+in the scheduling due to the non-uniformity of communication bandwith between components, latency and
+performance characteristics.\\
+2) Most accelerator architectures do not support preeption but assume a run-to-completion execution
+model. While computations on CPU cores can be easily preempted and resumed by reading and restoring
+well defined internal registers, most hardware accelerators do no even expose teh complete internal
+state nor are they designed to be interrupted.\\
+3) Heterogeneous computing resources have completely different architectures and ISAs. Hence, 
+a dedicated binary is required for each combination of task and accelerator which prevents migrating 
+tasks between arbitrary compute units. Even if a task with the same functionality is avaiable for
+several architectures and if the internal state of the architecture is accessible, misgrating a task
+between different architectures is far from trivial, because the represetnation and interpretation of 
+state is completely different.
+
+\subsection{Design decisions}
+During the implementation phase some decision have been taken to design the framework. \\
+
+
+
+
+
+
+%-----------------------------------------------------------------------------
+\subsection{The second subsection of the first \\ Section}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec et ligula. Nullam
+in libero. Donec dictum pede in justo. Lorem ipsum dolor sit amet, consectetur
+adipiscing elit. Aliquam congue. Aliquam egestas. Nunc eu est ac nibh mattis
+vestibulum. Curabitur aliquet bibendum odio. Etiam hendrerit. Nunc a velit quis
+dui molestie consequat. Sed et turpis et mi feugiat tincidunt. Sed sollicitudin.
+Ut risus? Duis eget orci eu turpis consectetur fringilla? Lorem ipsum dolor sit
+amet, consectetur adipiscing elit. Nullam tellus ligula, placerat vitae, tempor
+vitae, varius id; est! Nullam et ipsum eget tellus eleifend sollicitudin? Fusce
+urna massa, imperdiet vitae, convallis in; lacinia sed, tortor.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Second Section}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Aenean magna. Nunc non
+ante eget nibh condimentum tempor. Nullam ullamcorper lectus eget mauris. Nam
+neque orci; rhoncus at, pulvinar quis, elementum sit amet, turpis. Mauris
+posuere nisi ut justo. Morbi non lorem vitae mauris interdum faucibus.
+Vestibulum ut sapien in augue faucibus fringilla. Vestibulum ante ipsum primis
+in faucibus orci luctus et ultrices posuere cubilia Curae; Etiam vestibulum
+fringilla libero. Curabitur libero diam, hendrerit sit amet, ornare eget,
+imperdiet vel, purus!
+
+
+%-----------------------------------------------------------------------------
+\subsection{The first subsection of the second \\ Section}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam consectetur ante at
+eros. Vestibulum mi nisi, venenatis sollicitudin, tempus sed, auctor id, tortor.
+Fusce orci. Duis tellus arcu, euismod sed, consequat sit amet, elementum vel,
+mauris. Curabitur leo diam; dapibus quis, condimentum vitae, dignissim ut, diam.
+Nulla et nulla eget elit volutpat sagittis.
+
+%-----------------------------------------------------------------------------
+\subsection{The second subsection of the second \\ Section}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris eget mauris.
+Nulla facilisi. Ut condimentum tempor eros? Integer metus mauris, consectetur
+sit amet, tempor a, facilisis eu, nisl. Vestibulum at turpis. Ut vitae tortor
+pretium nisl vestibulum blandit. Nulla nibh urna, semper et, elementum at,
+mattis ut, nisi! Cum sociis natoque penatibus et magnis dis parturient montes,
+nascetur ridiculus mus. Morbi vel ligula eget lacus convallis venenatis. Aliquam
+lacinia tincidunt felis. Ut dui.
+
+% We suggest the use of JabRef for editing your bibliography file (Report.bib)
+%\bibliographystyle{splncs}
+%\bibliography{Report}
+
+\end{multicols}
+\end{document}
