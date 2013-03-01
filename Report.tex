@@ -131,6 +131,116 @@ state is completely different.
 \subsection{Design decisions}
 During the implementation phase some decision have been taken to design the framework. \\
 
+The first was about the Scheduler Component: Scheduling of homogeneous CPU cores is currently done in
+the kernel, as all needed input information for the scheduling decision is avaiable to the system, 
+so that the scheduling problem can be completely hidden from the application programmer. The 
+heterogeneous scheduling problem is more complicated, as more decision parameters affect the decision,
+which are partly not avaiable to the systems scheduler component.\\
+Selecting an appropriate hardware architecture for a task to be sceduled dynamically at runtime
+is not trivial and has to be performed  by a scheduler, which can be located at different locantions
+in the system, either in the application, in user space or in the system's kernel.\\
+To allow a holistic view on the applications and its execution environment, we perform scheduling in 
+the system's kernel by extending the CF scheduler. That way the scheduling principles are still 
+hidden from the application developer and the OS can perform global decisions based on the system
+utilization. Application specific scheduling inputs still have to be provided by the application 
+developer to incorporate application's needs. Therefore we use a hybrid user/kernel level approach
+to perform heterogeneous scheduling. A specific interface has to be provided to allow communication
+between  application and scheduler.
+
+The second was about the Operating System Adapting: Kernel space scheduling is the current standard
+in operating systems. To provide support for heterogeneous architectures one could either extend an 
+existing OS or completely rewrite and fully optimize it towards the heterogeneity. While heterogenous
+systems will be more and more used in future and become standard in a foreseeable time, the authors
+believe that a complete rewrite of OS is not needed. An extension to the current  system has several
+advantages: Providing a modular implemented extension to the CFS 1) keeps teh management structures
+as well as the scheduler component exchangeble, 2) makes the changes easily applicable to other OS,
+and 3) reuses well established and well known functionalities of the current  kernel that have been
+developed over years. That way our kernel extension will help to explore new directions for future OS,
+but does not yet try to set a new standard.
+
+The third decision was about Delegate Threads: Tasks that execute on heterogeneous resources may have
+no access to main memory and use a completely different instruction set or execution model than an
+equivalent task on a CPU. In order to schedule and manage these tasks whitout requiring a major OS
+rewrite, we need to expose the tasks to the OS as known schedulable entities. We therefore represent
+each task executing on a hardware accelerator  as a thread  to the OS. This allows us to use and 
+extend  the existing data structures of the scheduler  in the linux kernel. We denote each thread 
+representing a task on a hardware accelerators as delegate thread.\\
+Apart from serving as a schedulable entity, the delegate thread also performs all operating system
+interaction and managment operations on behalf of the task executing on the accelerator unit, such as
+trasferring  data to and from the compute unit and controlling its configuration and execution.
+The delegate threads must be spawned explicitly by the application and thus can also be used for
+co-scheduling on different architectures. Once created, all threads are treated and scheduled equally
+by the operating system.
+
+As a forth decision there is the Cooperative Multitasking: The CFS implements preemptive multitasking
+with time-sharing based on a fairness measure. Therefore, our scheduler has to include means to 
+preempt a task and to migrate it to another computing unit. While non-voluntary preemption on FPGAs is
+possible, GPUs currently do not directly support it yet, even if it is planned for the future.
+Therefore we use the delegate threads to forward requests from the kernel scheduler to the task on 
+the accelerator.
+Nevertheless, even enabling preemption on GPUs does not solve the migration problem. The major 
+difficulty is to find a way of mapping  the current  state of a compute unit to an equivalent state
+on a different compute unit. To allow preemption and subsequent migration of applications on 
+heterogeneous systems, their delegate threads need to be in a state, which can be interpreted by other
+accelerators or by the CPU. As it is no possible to interrupt an accelerator at an arbitrary point
+of time and to assume that it is in such a state, we propose to use a cooperative multitasking 
+approach using checkpoints  to resolve these limitations. After reaching a checkpoint, an application
+voluntarily hands back the control to the OS, which then may perform scheduling decisions to suspend 
+and migrate a thread at these points. The authors beleive that this currently is the only way to 
+simulate preemptive  multitasking on heterogeneous hardware.
+
+\subsection{Scheduling Model}
+
+From the design decisions above we derive our scheduling model that is not restricted to a certain 
+class of operating systems or scheduling algorithms. Applications using the scheduler may spawn 
+several threads that may possibly run on diverse architectures.
+
+Thread information: As the scheduler needs information about the threads to be scheduled, the authors
+store this application provided information called meta information about each thread and submit it 
+to the scheduler. The meta information can be individually set for an application. Currently the 
+authors only use a type affinity towards a targe architecture which can be determined dynamically
+depending on  the input data. Further application specific input data can possibly be determined 
+using profiling prior to the first use of an application.
+
+Scheduling: The scheduler component may be located in the kernel space as well as the user space. To
+assign tasks to certain hardware components, the scheduler has to provide a queue for each available
+hardware. The application provided meta information is used in a scheduling policy to map newly 
+arriving tasks to one of the queues. Whenever a compute unit runs indle or the currently running 
+task has used  its complete time slice, the scheduler may dequeue a waiting task for that specific
+compute unit. In case this is a hardware task, the delegate thread receives the information that it
+may run its hardware counterpart. This includes using   the proprietary drivers of the hardware, which
+are inevitable for the communication with some accelerators. As these currently may only be used from
+used space, this requires a combined approach using the kernel space and the user space. For CPUs, 
+the standard Linux scheduler is used.
+
+Checkpointing: Checkpointing has to be performed when the application can safely interrupt its 
+execution and store its state in main memory. The state has to be stored by the application itself
+in data structures of the corresponding delegate thread, which then can be migrated to a different
+architecture. The checkpoint data of the delegate thread thus has to be readable by all target 
+architectures.
+We define a checkpoint as a struct of data structures that unambiguosisly defines the state of the 
+application. The scheduler does not have any requirements concerning the checkpoint data. Hence, the
+application has to make sure that all needed data is available in these data structures and thus
+stored in accessible memory at the end of each thread's time slice. A checkpoint in most cases is a
+combination of 1) a set of data structures that define a minimum state that is reached several times
+during execution, and 2) a data structure that define the position in the code. The checkpoint data
+of an application is copied to the newly allocated accelerator and copied back to the host's main 
+memory when the application's time slice is exhausted. 
+Checkpoints are to be defined by the application developer or to be inserted by a compiler. One has 
+to identify a preferably small set of data structures that 1) unambiguously define the state of a 
+thread, and 2) are readable and translatable to corresponding data structures of other compute units.
+The size of checkpoints may vary to a large extend depending on the application used. While MD5 
+cracking  only needs to store the current loop index and the given search-string, image processing 
+algoritms require to store the complete intgrermediate results that might be of large extent.
+In general, a checkpoint could be simply defined by a list of already processed data sets. Therefore,
+the choice of the checkpoint is very important and influences the scheduling granularity. The 
+checkpoint distance, i.e., the amount of work done between 2 checkpoints stored back, increases with
+the size of the checkpoint.
+We here assume all checkpoints to be small enough to fit into the host's memory. The introduced 
+checkpoint size is known at definition time and may be used to re-determine the scheduling granularity
+for a task.
+
+
 
 
 
