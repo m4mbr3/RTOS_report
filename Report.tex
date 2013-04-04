@@ -24,7 +24,21 @@
 \usepackage{amssymb}
 \usepackage[dvips]{graphicx}
 \usepackage{epsfig}
+\usepackage{todonotes}
+\usepackage{moreverb}
+\usepackage{hyperref}
 \input{tcilatex}
+
+
+%% first attempt (but needs modifications in case of optional parameters to \includegraphics)
+
+\newcommand{\vcenteredinclude}[1]{\begingroup
+\setbox0=\hbox{\includegraphics{#1}}%
+\parbox{\wd0}{\box0}\endgroup}
+
+%% better: (general command to vertically center horizontal material)
+\newcommand*{\vcenteredhbox}[1]{\begingroup
+\setbox0=\hbox{#1}\parbox{\wd0}{\box0}\endgroup}
 %-----------------------------------------------------------------------------
 % Page Setup
 \textheight24cm \textwidth17cm \columnsep6mm
@@ -50,8 +64,6 @@
 \newenvironment{figurehere}{\def\@captype{figure}\vspace{2ex}}{\vspace{2ex}}
 \makeatother
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 
@@ -75,8 +87,8 @@ Received: March, 06 2013\\
 \begin{myabstract} Abstract \end{myabstract}
 During these days, computers are more often provided with dedicated graphic cards. Modern GPUs are
 designed to exploit an high level of parallelism and compared to a standard CPU are faster
-(sometimes more than 10X) and more expensive. 
-A common user, that is not either playing or doing some graphic task, use the ~10\% of GPUs 
+ (sometimes more than 10X) and more expensive. 
+A common user, that is not either playing or doing some graphic tasks, use the ~10\% of GPUs 
 computational capacity. The main goal of this project is to fix, deploy and test an heterogeneous 
 scheduler that allows linux to use both CPUs and GPUs at the same time. The implementation of this 
 scheduler is in both kernel and user space and allow the tasks migration using the cuda libraries.
@@ -131,7 +143,7 @@ state is completely different.
 \subsection{Design decisions}
 During the implementation phase some decision have been taken to design the framework. \\
 
-The first was about the Scheduler Component: Scheduling of homogeneous CPU cores is currently done in
+The first was about the {\bf Scheduler Component}: Scheduling of homogeneous CPU cores is currently done in
 the kernel, as all needed input information for the scheduling decision is avaiable to the system, 
 so that the scheduling problem can be completely hidden from the application programmer. The 
 heterogeneous scheduling problem is more complicated, as more decision parameters affect the decision,
@@ -147,7 +159,7 @@ developer to incorporate application's needs. Therefore we use a hybrid user/ker
 to perform heterogeneous scheduling. A specific interface has to be provided to allow communication
 between  application and scheduler.
 
-The second was about the Operating System Adapting: Kernel space scheduling is the current standard
+The second was about the {\bf Operating System Adapting}: Kernel space scheduling is the current standard
 in operating systems. To provide support for heterogeneous architectures one could either extend an 
 existing OS or completely rewrite and fully optimize it towards the heterogeneity. While heterogenous
 systems will be more and more used in future and become standard in a foreseeable time, the authors
@@ -158,7 +170,7 @@ and 3) reuses well established and well known functionalities of the current  ke
 developed over years. That way our kernel extension will help to explore new directions for future OS,
 but does not yet try to set a new standard.
 
-The third decision was about Delegate Threads: Tasks that execute on heterogeneous resources may have
+The third decision was about {\bf Delegate Threads}: Tasks that execute on heterogeneous resources may have
 no access to main memory and use a completely different instruction set or execution model than an
 equivalent task on a CPU. In order to schedule and manage these tasks whitout requiring a major OS
 rewrite, we need to expose the tasks to the OS as known schedulable entities. We therefore represent
@@ -172,7 +184,7 @@ The delegate threads must be spawned explicitly by the application and thus can 
 co-scheduling on different architectures. Once created, all threads are treated and scheduled equally
 by the operating system.
 
-As a forth decision there is the Cooperative Multitasking: The CFS implements preemptive multitasking
+As a forth decision there is the {\bf Cooperative Multitasking}: The CFS implements preemptive multitasking
 with time-sharing based on a fairness measure. Therefore, our scheduler has to include means to 
 preempt a task and to migrate it to another computing unit. While non-voluntary preemption on FPGAs is
 possible, GPUs currently do not directly support it yet, even if it is planned for the future.
@@ -238,61 +250,98 @@ checkpoint distance, i.e., the amount of work done between 2 checkpoints stored 
 the size of the checkpoint.
 We here assume all checkpoints to be small enough to fit into the host's memory. The introduced 
 checkpoint size is known at definition time and may be used to re-determine the scheduling granularity
-for a task.
+for a task. 
+
+\section{Implementation and testing}
+\subsection{Kernel space modification}
+The creation of the scheduler partially has been done inside the kernel where have been modified 
+components related to the CFS scheduler.
+\\
+
+A)Data Structures
+
+Following  the goal to extend the current Linux scheduler, we have to make the kernel aware of
+existing heterogeneous hardaware accelerators. The CFS uses its queue and statistics to ensure a fair 
+treatment of all tasks with respect to their priorities. Its queue is ordered by the amount of
+unfairness, i.e., the time the task would have to execute undisturbed to be treated fair. We extend
+the kernel with a specific task struct for hardware threads and a semaphore protected queue for each
+of the available accelerators. The current implementation of the meta information in cludes the
+memory size to be copied and an array of type  affinities. The higher a task's affinity to a compute
+unit is, the better is the estimated performance on this compute unit.
+\\
+
+B)Scheduler API \\
+
+With respect to the cooperative use of the scheduler, we provide an interface to the scheduler, which 
+enables user space applications to request (allocate), re-request and free compute units. The 
+allocation call requests and acquires that compute unit, which matches the calling task best by 
+enqueueing the task to the associated waiting queue. The assignment is done using an affinity-based 
+approach, where the given affinity, as well as the current length of the waiting queues and the load 
+of the compute units are included. Our CFS extension allows the migration of threads from one compute 
+unit to another if the application provides implementations for both. Migration of a thread may be 
+performed while it is blocked within a waiting queue or even if it is running on any of the available 
+compute units. Since there are no means of directly migrating the tasks from one instruction set to 
+another, migration is achieved by a combination of checkpointing and cooperative multitasking. If the 
+program reaches a checkpoint, it requests (re-requests) to further use the compute unit, but offers to
+voluntarily release it (also compare Figure 2). The scheduler decides if the task on the compute unit 
+should be replaced by another, which depends on the type of compute unit and on the cost of switching 
+the task. Re-requests inside the time window of an accelerator-specific granularity are always 
+successful and will only be denied after the granularity has expired and if other tasks are waiting 
+for the resource. The time a task may run on an accelerator follows the CFS approach. It is the sum 
+of the fairness delta, i.e., the time to compute until the (negative) unfairness is equalized, and 
+the granularity, i.e., the "positive unfairness" for this task. To enable dynamic load balancing on 
+CPU cores and GPUs, a load balancing component managing running and queued tasks was introduced. If 
+the application has either finished its work or unsuccessfully re-requested its compute unit, it 
+calls a free function. This releases the compute units semaphore and hands it to the next task or, in 
+case no other tasks are waiting on this device, invokes the load balancer.
+\\
+
+C) Control API\\
+
+Using most of todays hardware accelerators involves using their proprietary user space APIs to copy 
+code or data to and from the device and to invoke programs on it. Since there are virtually no 
+implementations to communicate efficiently with these devices from the kernel, the extension leaves 
+all interaction with the accelerators to the {\bf user space}. It provides system calls to add a compute
+unit, to remove it afterwards, to iterate through all currently added units and to alter a device 
+after it has been added.
+\end{multicols}
+\vspace{30ex}\centering{\includegraphics[width=13cm]{eps/schema.eps}}
+\centering{\includegraphics[width=13cm]{eps/flowchar.eps}}
+
+\vspace{20ex}
+\begin{multicols}{2}
+
+\subsection{Installation Guide}
+
+In this section we will see which steps are needed to setup our linux box to support accelerators.
+I will describe where take the files useful to the installation and which components have to be setuped.
+
+\begin{itemize} 
+
+    \item {OS installation and kernel patch:\\
+    Before everything, we have to install the OS. This hybrid scheduler has been done on a Ubuntu 10.04.4 LTS.
+    You can download the ISO image from the following link\\
+    \url {https://mega.co.nz/#!IodSWLZS!FHynfh_DNqm0Kb1rWb9ckX_uT68BPhaFthWQh34EuWk}\\
+    Either burn it on a cd-rom (using eg. k3b, brazero) or create a bootable pendrive (look at this guide \url{https://help.ubuntu.com/community/Installation/FromUSBStick})\\
+    Install the Ubuntu distro on a either a laptop or a PC where is plugged in an accelerators 
+
+            
+
+} 
+\end{itemize}
 
 
 
-
+%codice
+\begin{verbatimtab}
+\end{verbatimtab}
+%how add TODO 
+\todo[inline]{Sezione con implementazione e programmi di test}
+\todo[inline]{Sezione con guida all'installazione}
 
 
 
 %-----------------------------------------------------------------------------
-\subsection{The second subsection of the first \\ Section}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec et ligula. Nullam
-in libero. Donec dictum pede in justo. Lorem ipsum dolor sit amet, consectetur
-adipiscing elit. Aliquam congue. Aliquam egestas. Nunc eu est ac nibh mattis
-vestibulum. Curabitur aliquet bibendum odio. Etiam hendrerit. Nunc a velit quis
-dui molestie consequat. Sed et turpis et mi feugiat tincidunt. Sed sollicitudin.
-Ut risus? Duis eget orci eu turpis consectetur fringilla? Lorem ipsum dolor sit
-amet, consectetur adipiscing elit. Nullam tellus ligula, placerat vitae, tempor
-vitae, varius id; est! Nullam et ipsum eget tellus eleifend sollicitudin? Fusce
-urna massa, imperdiet vitae, convallis in; lacinia sed, tortor.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{The Second Section}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit.  Aenean magna. Nunc non
-ante eget nibh condimentum tempor. Nullam ullamcorper lectus eget mauris. Nam
-neque orci; rhoncus at, pulvinar quis, elementum sit amet, turpis. Mauris
-posuere nisi ut justo. Morbi non lorem vitae mauris interdum faucibus.
-Vestibulum ut sapien in augue faucibus fringilla. Vestibulum ante ipsum primis
-in faucibus orci luctus et ultrices posuere cubilia Curae; Etiam vestibulum
-fringilla libero. Curabitur libero diam, hendrerit sit amet, ornare eget,
-imperdiet vel, purus!
-
-
-%-----------------------------------------------------------------------------
-\subsection{The first subsection of the second \\ Section}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam consectetur ante at
-eros. Vestibulum mi nisi, venenatis sollicitudin, tempus sed, auctor id, tortor.
-Fusce orci. Duis tellus arcu, euismod sed, consequat sit amet, elementum vel,
-mauris. Curabitur leo diam; dapibus quis, condimentum vitae, dignissim ut, diam.
-Nulla et nulla eget elit volutpat sagittis.
-
-%-----------------------------------------------------------------------------
-\subsection{The second subsection of the second \\ Section}
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris eget mauris.
-Nulla facilisi. Ut condimentum tempor eros? Integer metus mauris, consectetur
-sit amet, tempor a, facilisis eu, nisl. Vestibulum at turpis. Ut vitae tortor
-pretium nisl vestibulum blandit. Nulla nibh urna, semper et, elementum at,
-mattis ut, nisi! Cum sociis natoque penatibus et magnis dis parturient montes,
-nascetur ridiculus mus. Morbi vel ligula eget lacus convallis venenatis. Aliquam
-lacinia tincidunt felis. Ut dui.
 
 % We suggest the use of JabRef for editing your bibliography file (Report.bib)
 %\bibliographystyle{splncs}
