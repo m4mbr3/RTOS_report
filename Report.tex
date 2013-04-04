@@ -8,7 +8,7 @@
 
 %-----------------------------------------------------------------------------
 % Type of publication
-\documentclass[a4paper,10pt]{article}
+\documentclass[a4paper,13pt]{article}
 %-----------------------------------------------------------------------------
 % Other packets: Most packets may be downloaded from www.dante.de and
 % "tcilatex.tex" can be found at (December 2005):
@@ -27,6 +27,7 @@
 \usepackage{todonotes}
 \usepackage{moreverb}
 \usepackage{hyperref}
+\usepackage{listings}
 \input{tcilatex}
 
 
@@ -41,7 +42,7 @@
 \setbox0=\hbox{#1}\parbox{\wd0}{\box0}\endgroup}
 %-----------------------------------------------------------------------------
 % Page Setup
-\textheight24cm \textwidth17cm \columnsep6mm
+\textheight24cm \textwidth16cm \columnsep8mm
 \oddsidemargin-5mm                 % depending on print drivers!
 \evensidemargin-5mm                % required margin size: 2cm
 \headheight0cm \headsep0cm \topmargin0cm \parindent0cm
@@ -305,7 +306,7 @@ all interaction with the accelerators to the {\bf user space}. It provides syste
 unit, to remove it afterwards, to iterate through all currently added units and to alter a device 
 after it has been added.
 \end{multicols}
-\vspace{30ex}\centering{\includegraphics[width=13cm]{eps/schema.eps}}
+\vspace{20ex}\centering{\includegraphics[width=13cm]{eps/schema.eps}}
 \centering{\includegraphics[width=13cm]{eps/flowchar.eps}}
 
 \vspace{20ex}
@@ -318,20 +319,39 @@ I will describe where take the files useful to the installation and which compon
 
 \begin{itemize} 
 
-    \item {OS installation and kernel patch:\\
-    Before everything, we have to install the OS. This hybrid scheduler has been done on a Ubuntu 10.04.4 LTS.
+    \item {OS installation and kernel patch:}\\
+    Before everything, we have to install the OS. During my project I decided to test it on Gentoo linux 32 bit.
+    I had problems with it because NVIDIA doesn't release official drivers for that specific distro and the drivers
+    provided by the gentoo developers did not work properely to this kind of application. So I decided to move
+    everything on the Operating System used by the authors.
+    This hybrid scheduler has been built on a Ubuntu 10.04.4 LTS.
     You can download the ISO image from the following link\\
-    \hyperref[Ubuntu ISO Image] {https://mega.co.nz/#!IodSWLZS!FHynfh_DNqm0Kb1rWb9ckX_uT68BPhaFthWQh34EuWk}\\
-    Either burn it on a cd-rom (using eg. k3b, brazero) or create a bootable pendrive (look at this guide \url{https://help.ubuntu.com/community/Installation/FromUSBStick})\\
+    \href{https://mega.co.nz/#!IodSWLZS!FHynfh_DNqm0Kb1rWb9ckX_uT68BPhaFthWQh34EuWk}{Ubuntu ISO Image}\\
+    Either burn it on a cd-rom (using eg. k3b, brazero) or create a bootable pendrive (look at this guide \href{https://help.ubuntu.com/community/Installation/FromUSBStick}{FromUSBStick})\\
     Install the Ubuntu distro on a either a laptop or a PC where is plugged in an accelerators (in our specific case an NVIDIA graphics card)
-    To do  so look at  \url{https://help.ubuntu.com/10.04/installation-guide/i386/}\\
-
-
-            
-
-} 
+    To do  so look at the \href{https://help.ubuntu.com/10.04/installation-guide/i386/}{Ubuntu 10.04 Installation Guide}\\
+    Ubuntu as default installs non-proprietary drivers (nouveou) that don't allow to program the graphic card. We have to remove them and install the proprietary driver provided from nvidia.
 \end{itemize}
-
+\end{multicols}
+\centering{\includegraphics[width=16cm]{eps/nouveau_small.eps}}
+\begin{multicols}{2}
+    This scheduler has been developed in 2010 when the driver version was 3.1. I tried to use it with the most recent 5.0 but given a possible change to the APIs it returns a runtime error.
+    The driver that I used are downloadable from \href{https://mega.co.nz/#!g49wnBaR!eVaf8DeGmDyPUV8VoJMtHRAHXDE4_-EWxwrmL6LCHWY}{NVIDIA dev-driver 3.1}\\
+    To install it run in a terminal as root the commands (NB the X server has to be shutted down)
+  %  \begin{verbatimtab}
+  \lstset{frame=shadowbox, rulesepcolor=\color{blue}}
+  \lstset{language=bash}
+\begin{lstlisting}
+#chmod u+rx devdriver_3.1_linux*.run
+#./devdriver_3.1_linux_32_256.40.run
+\end{lstlisting}
+%    \end{verbatimtab}
+    Are useful but not necessarily the toolkits provided by nvidia downloadable from \href{https://mega.co.nz/#!88kFCCJL!FmqUdQHY0VE00V5aQOcTQRuaufw9bZ6AS7ZyfQGXiSc} {Toolkits}\\
+    As before to install the toolkits run the commands
+\begin{lstlisting}
+#chmod u+rx cudatoolkit_3.1*.run
+\end{lstlisting}
+    
 
 
 %codice
