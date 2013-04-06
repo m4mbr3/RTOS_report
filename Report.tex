@@ -417,7 +417,7 @@ I will describe where take the files useful to the installation and which compon
 #rm /usr/src/linux && ln -s /usr/src/linux-patched /usr/src/linux
 \end{lstlisting}
 
-    \subsection{Kernel setting, compilation and installation}
+\subsection{Kernel setting, compilation and installation}
     In this phase we have the kernel correctly installed but it is not configured. I have copied the
     .config file precreated by ubuntu. It is general with all the most common modules. If you want
     to create your own kernel config file run: 
@@ -467,7 +467,7 @@ I will describe where take the files useful to the installation and which compon
 #define CU_HW_QUEUE_LIMIT 5
 #define CU_HW_LOAD_BALANCER_FILLS_QUEUE
 #define CU_HW_KEEP_QUEUE_FULL
-/* Also for this mode is needed to change  in the file sched_hwaccel.c from */ 
+/* Also for this mode is needed  a modification in the file sched_hwaccel.c from */ 
 if (is_cpu_cui(cui)||
     cui->cfs_rq.nr_running < CU_HW_QUEUE_LIMIT - 1)
 /* To */
@@ -477,6 +477,33 @@ if (is_cpu_cui(cui) ||
 \end{lstlisting}
         }
     \end{itemize}
+    There is also another tunable parameters inside the 'kernel/sched_hwaccel.c' file.
+    You will find the basic granularity setting per type:
+\begin{lstlisting}
+static u64 type_granularities_sec[CU_NUMOF_TYPES]
+\end{lstlisting}
+    Alternatively you can
+\begin{lstlisting}
+#define APPLICATION_CONTROLLED_GRANULARITY
+\end{lstlisting}
+    in the previosly discussed header file and thereby extend the signature of the
+    allocation system call.
+
+    After the end of the compilation we have to install the kernel and set the grub configuration.
+    It is feasible running the commands:
+\begin{lstlisting}
+sudo make modules_install
+sudo make install
+sudo update-initramfs -c -k 2.6.32.57
+sudo update-grub
+\end{lstlisting}
+    To check if everything is gone ok reboot the system and select the new voice in the list.
+    If you get either a kernel panic or something that doesn't work try a new kernel configuration
+    to include the missing parts.
+    Instead, if everything seems to go normal go ahead in the configuration.
+
+
+
 %codice
 \begin{verbatimtab}
 \end{verbatimtab}
