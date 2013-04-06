@@ -28,6 +28,10 @@
 \usepackage{moreverb}
 \usepackage{hyperref}
 \usepackage{listings}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
 \input{tcilatex}
 
 
@@ -105,7 +109,7 @@ components, researchers and industries has started to produce hybrid solution of
 The main goal of these solutions is the performance improvement. What is analyzed in this project is 
 a system that use the CUDA API provided by NVIDIA and the linux kernel to create a huge scheduler
 being able to migrate tasks between GPUs/CPUs and viceversa. This report is organized in such a way
-that the first part provides an high level description of the architecture concepts. The 
+that the first part provides an high level description of the architecture concepts (Partially taken by \cite{paper_hetsched}). The 
 second describes how this concepts has been implemented and tested. The third figures out step by step
 the installation phases. 
 
@@ -306,20 +310,25 @@ all interaction with the accelerators to the {\bf user space}. It provides syste
 unit, to remove it afterwards, to iterate through all currently added units and to alter a device 
 after it has been added.
 \end{multicols}
-\vspace{20ex}\centering{\includegraphics[width=13cm]{eps/schema.eps}}
-\centering{\includegraphics[width=13cm]{eps/flowchar.eps}}
-
-\vspace{20ex}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=13cm]{eps/schema.eps}
+        \caption{Schema of the architecture implemented}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=10cm]{eps/flowchar.eps}
+        \caption{flowchart of the execution for each process}
+    \end{figure}
 \begin{multicols}{2}
-
-\subsection{Installation Guide}
+\vspace{50ex}
+\section{Installation Guide}
 
 In this section we will see which steps are needed to setup our linux box to support accelerators.
 I will describe where take the files useful to the installation and which components have to be setuped.
 
-\begin{itemize} 
 
-    \item {OS installation and kernel patch:}\\
+\subsection{OS installation and drivers installation}
     Before everything, we have to install the OS. During my project I decided to test it on Gentoo linux 32 bit.
     I had problems with it because NVIDIA doesn't release official drivers for that specific distro and the drivers
     provided by the gentoo developers did not work properely to this kind of application. So I decided to move
@@ -331,29 +340,143 @@ I will describe where take the files useful to the installation and which compon
     Install the Ubuntu distro on a either a laptop or a PC where is plugged in an accelerators (in our specific case an NVIDIA graphics card)
     To do  so look at the \href{https://help.ubuntu.com/10.04/installation-guide/i386/}{Ubuntu 10.04 Installation Guide}\\
     Ubuntu as default installs non-proprietary drivers (nouveou) that don't allow to program the graphic card. We have to remove them and install the proprietary driver provided from nvidia.
-\end{itemize}
 \end{multicols}
-\centering{\includegraphics[width=16cm]{eps/nouveau_small.eps}}
+\begin{figure}[H]
+\centering{\includegraphics[width=13cm]{eps/nouveau_small.eps}}
+\caption{Disinstalling nouveou driver (nouveau-firmware package) using the Synaptic Packege Manager }
+\end{figure}
 \begin{multicols}{2}
     This scheduler has been developed in 2010 when the driver version was 3.1. I tried to use it with the most recent 5.0 but given a possible change to the APIs it returns a runtime error.
     The driver that I used are downloadable from \href{https://mega.co.nz/#!g49wnBaR!eVaf8DeGmDyPUV8VoJMtHRAHXDE4_-EWxwrmL6LCHWY}{NVIDIA dev-driver 3.1}\\
     To install it run in a terminal as root the commands (NB the X server has to be shutted down)
-  %  \begin{verbatimtab}
-  \lstset{frame=shadowbox, rulesepcolor=\color{blue}}
   \lstset{language=bash}
+  \lstset{
+      basicstyle=\ttfamily\footnotesize,
+          breaklines=true,
+          tabsize=2,
+          showspaces=false,
+          showstringspaces=false,
+          framexleftmargin=5pt,
+          framexrightmargin=5pt,
+          framexbottommargin=5pt,
+          framextopmargin=5pt,
+  }
+   
 \begin{lstlisting}
 #chmod u+rx devdriver_3.1_linux*.run
 #./devdriver_3.1_linux_32_256.40.run
 \end{lstlisting}
-%    \end{verbatimtab}
+    The second step to have our cuda framework working is to install the \href{https://mega.co.nz/#!d1FD0TiS!PusMUXIuLJzxiM_hh4ABi1ltWvAIARZutZR3wIR4TEU}{NVIDIA SDK}\\
+    The commands to install it are
+\begin{lstlisting}
+#chmod u+rx gpucomputingsdk*.run
+#./gpucomputingsdk_3.1_linux.run
+\end{lstlisting}
     Are useful but not necessarily the toolkits provided by nvidia downloadable from \href{https://mega.co.nz/#!88kFCCJL!FmqUdQHY0VE00V5aQOcTQRuaufw9bZ6AS7ZyfQGXiSc} {Toolkits}\\
     As before to install the toolkits run the commands
 \begin{lstlisting}
 #chmod u+rx cudatoolkit_3.1*.run
 \end{lstlisting}
-    
+    We can use the following commands to check if the drivers and the tools are correctly installed
+    \begin{itemize}
+        \item{{\bf nvcc} is the most important tool. It's the NVIDIA compiler for cuda}
+            \begin{figure}[H]
+                \includegraphics[width=8cm]{eps/nvcc.eps}
+            \end{figure}
+        \item{{\bf nvidia-smi} allow us to see which graphic units are installed on our machine}
+            \begin{figure}[H]
+                \includegraphics[width=7cm]{eps/nvidia-smi.eps}
+            \end{figure}
+        \item{{\bf lsmod} program let us know if the kernel module 'nvidia' is loaded and used by the linux kernel}
+            \begin{figure}[H]
+                \includegraphics[width=7cm]{eps/lsmod.eps}
+            \end{figure}
+    \end{itemize}
 
+\subsection{Kernel download and patching}
+    Now that we have the OS properely installed and configured we have to download the \href{www.kernel.org}{kernel}\\
+    Either we download the tar.gz of  the right version (2.6.32.57, skip the first list of commands look at only the patch) or we clone the git repository running the following commands (The hardest way):\\
+    \begin{lstlisting}
+#cd /usr/src/
+#git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux-stable
+#git checkout v2.6.32.57
+#rm /usr/src/linux && ln -s /usr/src/linux-stable /usr/src/linux
+    \end{lstlisting}
+    With the last command above we move our history at the tag of the right version for the patch provided 
+    by the author.
+    Now we have to download in the /usr/src/linux-stable/ folder the patch. Use \href{https://mega.co.nz/#!R09hlSrY!TjYiR2m4xV6hadBFEuXAQ2r1-TBUB4LIkAU7-0sgn58}{this link} to retrive the patch 
+    The command below apply the patch to the kernel:
+\begin{lstlisting}
+#patch -p1 < kss_2.6.32.57.patch
+\end{lstlisting}
+    We have done with the hardest way to do that. I have already done all those things and are stored in my github repo
+    so easily you can choose to clone my repo with the patch already applied:
+\begin{lstlisting}
+#cd /usr/src/
+#git clone https://github.com/m4mbr3/RTOS_kernel.git linux-patched
+#rm /usr/src/linux && ln -s /usr/src/linux-patched /usr/src/linux
+\end{lstlisting}
 
+    \subsection{Kernel setting, compilation and installation}
+    In this phase we have the kernel correctly installed but it is not configured. I have copied the
+    .config file precreated by ubuntu. It is general with all the most common modules. If you want
+    to create your own kernel config file run: 
+\begin{lstlisting}
+#make menuconfig 
+\end{lstlisting}
+    Select all the components of your machine. Save it. Now you are ready to compile the kernel.
+    Run:
+\begin{lstlisting}
+#make -jX
+\end{lstlisting}
+    The X has to be changed with the number of your cores + 1. It makes the compilation faster. If you prefer to 
+    have a one core compilation just remove it. In this case only one thread will be processed at a time.
+    Before 'make' starts to compile it asks you to set some variables releated to the extension.
+    It asks to set the following parameters:
+\begin{lstlisting}
+1) CU_HW_QUEUE_LIMIT
+2) CU_HW_LOAD_BALANCER_FILLS_QUEUE
+3) CU_HW_KEEP_QUEUE_FULL
+\end{lstlisting}
+    They are also tunable in
+\begin{lstlisting}
+'include/linux/sched_hwaccel.h'
+\end{lstlisting}
+    The firt one sets the limit, the second one controls if the load balancer should refill the queue once 
+    it runs and the third one controls if the load balancer is invoked when the accelerator is idle or when 
+    the queue is not full. These parameters are linked to migration modes.
+    Listed below the different cases:
+    \begin{itemize}
+        \item{ {\bf Migration without queue limit:\\}
+\begin{lstlisting}
+#define CU_HW_QUEUE_LIMIT 99999
+//#define CU_HW_LOAD_BALANCER_FILLS_QUEUE
+//#define CU_HW_KEEP_QUEUE_FULL
+\end{lstlisting}
+        }
+        \item{ {\bf Migration without queue limit 5 and fixed set of tasks\\}
+\begin{lstlisting}
+#define CU_HW_QUEUE_LIMIT 5
+#define CU_HW_LOAD_BALANCER_FILLS_QUEUE
+#define CU_HW_KEEP_QUEUE_FULL
+\end{lstlisting}
+        
+        }
+        \item{{\bf Migration without queue limit and variable set of tasks\\}
+\begin{lstlisting}
+#define CU_HW_QUEUE_LIMIT 5
+#define CU_HW_LOAD_BALANCER_FILLS_QUEUE
+#define CU_HW_KEEP_QUEUE_FULL
+/* Also for this mode is needed to change  in the file sched_hwaccel.c from */ 
+if (is_cpu_cui(cui)||
+    cui->cfs_rq.nr_running < CU_HW_QUEUE_LIMIT - 1)
+/* To */
+
+if (is_cpu_cui(cui) ||
+    cui->cfs_rq.nr_running < CU_HW_QUEUE_LIMIT)
+\end{lstlisting}
+        }
+    \end{itemize}
 %codice
 \begin{verbatimtab}
 \end{verbatimtab}
@@ -366,8 +489,8 @@ I will describe where take the files useful to the installation and which compon
 %-----------------------------------------------------------------------------
 
 % We suggest the use of JabRef for editing your bibliography file (Report.bib)
-%\bibliographystyle{splncs}
-%\bibliography{Report}
+\bibliographystyle{splncs}
+\bibliography{Report}
 
 \end{multicols}
 \end{document}
