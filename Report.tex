@@ -510,16 +510,26 @@ sudo update-grub
     scheduler we have to install the applications that use it. The authors released two application.
     They are dowlodable, like the kernel, from \href{https://github.com/m4mbr3/RTOS_application.git}{my github repository}.
     In this repo you will find a doc folder with the Testapp guide \cite{doc_testapp} resumed partially here and 
-    another folder with the source code. There are three subdirectory :
+    another folder with the source code.
+    To clone it as above use the following commands:
+\begin{lstlisting}
+>cd ~
+>git clone https://github.com/m4mbr3/RTOS_application.git testapplication
+\end{lstlisting}
+    In the repository there are three subdirectory :
+    \vspace{4ex}
     \begin{itemize}
         \item{{\bf linux-source-2.6.32}}\\
     \end{itemize}
+    \vspace{-2ex}
         This is the subdir with all the kernel modification. As mentioned before they don't work and also
         are not in the .patch format so the application is painful with them. Fortunately the authors
         send me the patch that we used in the previous chapter so this folder up to now is useless.
+    \vspace{4ex}
     \begin{itemize}
         \item{{\bf testapplication}}\\
     \end{itemize}
+    \vspace{-2ex}
         This is the folder with the testapplication framework. I patched the makefile to make it compilable.
         You will not have any problem to do that. To see which  modification I applied you can use the git diff
         command as follow:
@@ -555,12 +565,25 @@ sudo update-grub
         \newline
         To compile the testapplication you have to just run :
         \begin{lstlisting}
-#make clean
-#make 
+>make clean
+>make 
         \end{lstlisting}
-        {\bf NB:} the testapplication has to be compiled only after the compilation of the library the we will see
+        {\bf NB:} the testapplication has to be compiled only after the compilation of the library that we will see
         in a while.
-
+    \vspace{4ex}
+    \begin{itemize}
+        \item{{\bf userpacecontrol}}\\
+    \end{itemize}
+    \vspace{-2ex}
+        In this subfolder we can find both the directory to the frontend and the directory to the library. First of 
+        all we need to run:
+\begin{lstlisting}
+>make
+\end{lstlisting}
+        to compile it. Then I suggest to copy it into the /lib/ directory using:
+\begin{lstlisting}
+>sudo cp libhwaccel_uc.so /lib/
+\end{lstlisting}
 
 %how add TODO 
 \todo[inline]{Sezione con implementazione e programmi di test}
