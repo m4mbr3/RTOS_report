@@ -74,7 +74,7 @@
 
 % Please use capital letters in the beginning of important words as for example
 \begin{mytitle}Heterogeneous Scheduler\end{mytitle}
-\begin{mysubtitle}Scheduling support for heterogeneous hardware accelerators under linux\end{mysubtitle}
+\begin{mysubtitle}Scheduling support for heterogeneous hardware accelerators under linux\cite{tobias_thesis}\end{mysubtitle}
 %
 % Please do not insert a line here
 %
@@ -107,7 +107,7 @@ scheduler is in both kernel and user space and allow the tasks migration using t
 Since the producers of GPUs has released the first version of API to program directly those 
 components, researchers and industries has started to produce hybrid solution of scheduler. 
 The main goal of these solutions is the performance improvement. What is analyzed in this project is 
-a system that use the CUDA API provided by NVIDIA and the linux kernel to create a huge scheduler
+a system that use the CUDA API\cite{cuda} provided by NVIDIA and the linux kernel to create a huge scheduler
 being able to migrate tasks between GPUs/CPUs and viceversa. This report is organized in such a way
 that the first part provides an high level description of the architecture concepts (Partially taken by \cite{paper_hetsched}). The 
 second describes how this concepts has been implemented and tested. The third figures out step by step
@@ -116,7 +116,7 @@ the installation phases.
 
 
 
-\section{Architercture concepts}
+\section{Architercture concepts} 
 
 %-----------------------------------------------------------------------------
 \subsection{Heterogeneous system definition and problems}
@@ -246,7 +246,7 @@ memory when the application's time slice is exhausted.
 Checkpoints are to be defined by the application developer or to be inserted by a compiler. One has 
 to identify a preferably small set of data structures that 1) unambiguously define the state of a 
 thread, and 2) are readable and translatable to corresponding data structures of other compute units.
-The size of checkpoints may vary to a large extend depending on the application used. While MD5 
+The size of checkpoints may vary to a large extend depending on the application used. While MD5\cite{rfc1321}\cite{oai:infoscience.epfl.ch:149727} 
 cracking  only needs to store the current loop index and the given search-string, image processing 
 algoritms require to store the complete intgrermediate results that might be of large extent.
 In general, a checkpoint could be simply defined by a list of already processed data sets. Therefore,
@@ -322,11 +322,14 @@ after it has been added.
     \end{figure}
 \begin{multicols}{2}
 \vspace{50ex}
-\section{Installation Guide}
+\section{Installation Guide \cite{doc_testapp}}
 
 In this section we will see which steps are needed to setup our linux box to support accelerators.
 I will describe where take the files useful to the installation and which components have to be setuped.
-
+The authors released the code and the documentation on a \href{https://github.com/pc2/hetsched.git}{github repository} but during my setup I noticed
+that the code was not correct and it didn't compile. I requested to them a working patch for the kernel
+and I fixed the bug in the testapplication provided. I will give you all the links to the fixed version
+in the following subsections.
 
 \subsection{OS installation and drivers installation}
     Before everything, we have to install the OS. During my project I decided to test it on Gentoo linux 32 bit.
@@ -393,7 +396,7 @@ I will describe where take the files useful to the installation and which compon
             \end{figure}
     \end{itemize}
 
-\subsection{Kernel download and patching}
+\subsection{Kernel download and patching \cite{kernel}}
     Now that we have the OS properely installed and configured we have to download the \href{www.kernel.org}{kernel}\\
     Either we download the tar.gz of  the right version (2.6.32.57, skip the first list of commands look at only the patch) or we clone the git repository running the following commands (The hardest way):\\
     \begin{lstlisting}
@@ -424,14 +427,7 @@ I will describe where take the files useful to the installation and which compon
 \begin{lstlisting}
 #make menuconfig 
 \end{lstlisting}
-    Select all the components of your machine. Save it. Now you are ready to compile the kernel.
-    Run:
-\begin{lstlisting}
-#make -jX
-\end{lstlisting}
-    The X has to be changed with the number of your cores + 1. It makes the compilation faster. If you prefer to 
-    have a one core compilation just remove it. In this case only one thread will be processed at a time.
-    Before 'make' starts to compile it asks you to set some variables releated to the extension.
+    Select all the components of your machine. Save it.     Before 'make' starts to compile it asks you to set some variables releated to the extension.
     It asks to set the following parameters:
 \begin{lstlisting}
 1) CU_HW_QUEUE_LIMIT
@@ -447,22 +443,24 @@ I will describe where take the files useful to the installation and which compon
     the queue is not full. These parameters are linked to migration modes.
     Listed below the different cases:
     \begin{itemize}
-        \item{ {\bf Migration without queue limit:\\}
+        \item{ {\bf Migration without queue limit:\\}}
+    \end{itemize}
 \begin{lstlisting}
 #define CU_HW_QUEUE_LIMIT 99999
 //#define CU_HW_LOAD_BALANCER_FILLS_QUEUE
 //#define CU_HW_KEEP_QUEUE_FULL
 \end{lstlisting}
-        }
-        \item{ {\bf Migration without queue limit 5 and fixed set of tasks\\}
+    \begin{itemize}
+        \item{ {\bf Migration without queue limit 5 and fixed set of tasks\\}}
+    \end{itemize}
 \begin{lstlisting}
 #define CU_HW_QUEUE_LIMIT 5
 #define CU_HW_LOAD_BALANCER_FILLS_QUEUE
 #define CU_HW_KEEP_QUEUE_FULL
 \end{lstlisting}
-        
-        }
-        \item{{\bf Migration without queue limit and variable set of tasks\\}
+    \begin{itemize}    
+        \item{{\bf Migration without queue limit and variable set of tasks\\}} 
+    \end{itemize}
 \begin{lstlisting}
 #define CU_HW_QUEUE_LIMIT 5
 #define CU_HW_LOAD_BALANCER_FILLS_QUEUE
@@ -475,19 +473,25 @@ if (is_cpu_cui(cui)||
 if (is_cpu_cui(cui) ||
     cui->cfs_rq.nr_running < CU_HW_QUEUE_LIMIT)
 \end{lstlisting}
-        }
-    \end{itemize}
-    There is also another tunable parameters inside the 'kernel/sched_hwaccel.c' file.
+        
+    There is also another tunable parameters inside the 'kernel/sched\_hwaccel.c' file.
     You will find the basic granularity setting per type:
 \begin{lstlisting}
 static u64 type_granularities_sec[CU_NUMOF_TYPES]
 \end{lstlisting}
-    Alternatively you can
+    Alternatively you can define
 \begin{lstlisting}
 #define APPLICATION_CONTROLLED_GRANULARITY
 \end{lstlisting}
     in the previosly discussed header file and thereby extend the signature of the
     allocation system call.
+    Now you are ready to compile the kernel.
+    Run:
+\begin{lstlisting}
+#make -jX
+\end{lstlisting}
+    The X has to be changed with the number of your cores + 1. It makes the compilation faster. If you prefer to 
+    have a one core compilation just remove it. In this case only one thread will be sponed at a time.
 
     After the end of the compilation we have to install the kernel and set the grub configuration.
     It is feasible running the commands:
@@ -501,17 +505,65 @@ sudo update-grub
     If you get either a kernel panic or something that doesn't work try a new kernel configuration
     to include the missing parts.
     Instead, if everything seems to go normal go ahead in the configuration.
+\subsection{Testapplication}
+    Now that we have the kernel properely configured with the syscall needed by the heterogeneous
+    scheduler we have to install the applications that use it. The authors released two application.
+    They are dowlodable, like the kernel, from \href{https://github.com/m4mbr3/RTOS_application.git}{my github repository}.
+    In this repo you will find a doc folder with the Testapp guide \cite{doc_testapp} resumed partially here and 
+    another folder with the source code. There are three subdirectory :
+    \begin{itemize}
+        \item{{\bf linux-source-2.6.32}}\\
+    \end{itemize}
+        This is the subdir with all the kernel modification. As mentioned before they don't work and also
+        are not in the .patch format so the application is painful with them. Fortunately the authors
+        send me the patch that we used in the previous chapter so this folder up to now is useless.
+    \begin{itemize}
+        \item{{\bf testapplication}}\\
+    \end{itemize}
+        This is the folder with the testapplication framework. I patched the makefile to make it compilable.
+        You will not have any problem to do that. To see which  modification I applied you can use the git diff
+        command as follow:
+        \begin{lstlisting}
+#git diff 960b8724bc252a8fe2662a470a600a2a4dc7142a fe403b2eb919be7ac3ebec7a62dbf37ffe3722af
+        \end{lstlisting}
+        The first one sha1 is related to my last commit, the second one is related to the last Author commit.
+               The testapplication, as the kernel extension, could be customized. Inside the 'testapp.h' file you
+        will be able to tune some modes:
+        \begin{lstlisting}
+/* types of ghosts...first defined one is taken */
+#define MODE_ONLY_MD5
+#define MODE_ONLY_PF
+#define MODE_MD5_AND_PF
+#define MODE_1_MD5_AND_2_PF
+        \end{lstlisting}
+        Choose one of the modes (only MD5 cracking workers, only prime factorization workers, both workers in 
+        equal amount, or both workers with twice as many PF workers than MD5 workers) with these preprocessor
+        macros. In "num\_of\_ghosts.h" you can define the number of concurrent "test applications" you want to
+        have, and in "kernel\_granularity.h" you can define the granularity that will be used if you enabled
+        the application controlled granularity in the kernel.
+        The framework allows you to calibrate singularly MD5 or PF application.
+        To adjust the MD5 application edit the file "worker\_md5.h":\\
+        {\bf ORIGINAL\_WORD\_LENGTH} is the word length of the target word and {\bf MD5POOL} is the alphabet.\\
+        {\bf WORDS\_PER\_BATCH} it the checkpoint distance of the CPU implementation and {\bf WORDS\_PER\_BATCH\_CPU}
+        the distance of the GPU version.\\
+        The target string generation can be found in 'worker\_md5.cpp'.\\
+        Instead to adjust the PF application edit the file 'worker\_prime.h':\\
+        {\bf BASE\_NUMBER} is the starting number of the number generation for the PF threads.\\
+        {\bf CANDIDATES\_PER\_BATCH} is the checkpoint distance of the CPU implementation and {\bf CANDIDATES\_PER\_BATCH\_GPU} 
+        the distance of the GPU version.\\
+        The number generation can be found in 'worker\_prime.cpp' 
+        \newline
+        To compile the testapplication you have to just run :
+        \begin{lstlisting}
+#make clean
+#make 
+        \end{lstlisting}
+        {\bf NB:} the testapplication has to be compiled only after the compilation of the library the we will see
+        in a while.
 
 
-
-%codice
-\begin{verbatimtab}
-\end{verbatimtab}
 %how add TODO 
 \todo[inline]{Sezione con implementazione e programmi di test}
-\todo[inline]{Sezione con guida all'installazione}
-
-
 
 %-----------------------------------------------------------------------------
 
