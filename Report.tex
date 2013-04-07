@@ -572,18 +572,25 @@ sudo update-grub
         in a while.
     \vspace{4ex}
     \begin{itemize}
-        \item{{\bf userpacecontrol}}\\
+        \item{{\bf userspacecontrol}}\\
     \end{itemize}
     \vspace{-2ex}
         In this subfolder we can find both the directory to the frontend and the directory to the library. First of 
-        all we need to run:
+        all we need to compile the library running:
 \begin{lstlisting}
+>cd ~/testapplication/kernel_space/src/userspacecontrol/library/
 >make
 \end{lstlisting}
         to compile it. Then I suggest to copy it into the /lib/ directory using:
 \begin{lstlisting}
 >sudo cp libhwaccel_uc.so /lib/
 \end{lstlisting}
+        After that we go in the frontend folder and we compile also that tool.
+        The result of this compilation will be a tool named accelerator-ctl. It allows us to control our scheduler
+        recording new accelerator in the system and list them when the testapplication is running to control
+        how the tasks are distributed thoughout the system.
+
+
 
 %how add TODO 
 \todo[inline]{Sezione con implementazione e programmi di test}
