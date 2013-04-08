@@ -352,7 +352,6 @@ in the following subsections.
     This scheduler has been developed in 2010 when the driver version was 3.1. I tried to use it with the most recent 5.0 but given a possible change to the APIs it returns a runtime error.
     The driver that I used are downloadable from \href{https://mega.co.nz/#!g49wnBaR!eVaf8DeGmDyPUV8VoJMtHRAHXDE4_-EWxwrmL6LCHWY}{NVIDIA dev-driver 3.1}\\
     To install it run in a terminal as root the commands (NB the X server has to be shutted down)
-  \lstset{language=bash}
   \lstset{
       basicstyle=\ttfamily\footnotesize,
           breaklines=true,
@@ -505,7 +504,7 @@ sudo update-grub
     If you get either a kernel panic or something that doesn't work try a new kernel configuration
     to include the missing parts.
     Instead, if everything seems to go normal go ahead in the configuration.
-\subsection{Testapplication}
+\subsection{Testapplication installation and setting}
     Now that we have the kernel properely configured with the syscall needed by the heterogeneous
     scheduler we have to install the applications that use it. The authors released two application.
     They are dowlodable, like the kernel, from \href{https://github.com/m4mbr3/RTOS_application.git}{my github repository}.
@@ -589,12 +588,39 @@ sudo update-grub
         The result of this compilation will be a tool named accelerator-ctl. It allows us to control our scheduler
         recording new accelerator in the system and list them when the testapplication is running to control
         how the tasks are distributed thoughout the system.
+        Now that you have compiled the library go back to the previous chapter to compile the testapp.
 
-
-
-%how add TODO 
-\todo[inline]{Sezione con implementazione e programmi di test}
-
+\section{How use and evaluate the test application}
+        In the previous section we have seen how is composed the testapplication repository. In this section, instead, 
+        we will see how the components above described works. 
+    \subsection{Control the scheduler}
+        Firtst of all we have to notify all our accelerators to the scheduler. To do so, the authors provided 
+        us the tool 'accelerator-ctl' which is our user-space tool
+        to control the scheduler. The operations provided are:
+        \begin{itemize}
+            \item{{\bf Add} a new accelerator}\\
+        \end{itemize}
+        \vspace{-2ex}
+\begin{lstlisting}
+>/accelerator-ctl -c X
+\end{lstlisting}
+        The X has to be changed with  the number of the device. If you have only one accelerator it will be 0.\\
+        \begin{itemize}
+            \item{{\bf List} the units recognized by the accelerator}\\
+        \end{itemize}
+        \vspace{-2ex}
+\begin{lstlisting}
+>./accelerator-ctl -l
+\end{lstlisting}
+        \begin{itemize}
+            \item{{\bf Remove} a selected unit from the scheduler}\\
+        \end{itemize}
+        \vspace{-2ex}
+\begin{lstlisting}
+>./accelerator-ctl -d
+\end{lstlisting}
+        It will ask to you which accelerator you want to delete.\\
+    \subsection{}
 %-----------------------------------------------------------------------------
 
 % We suggest the use of JabRef for editing your bibliography file (Report.bib)
