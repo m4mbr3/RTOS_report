@@ -80,9 +80,9 @@
 %
 \\
 Mambretti Andrea\\
-Matr. 783286, (m4mbr3@gmail.com)\\
+Matr. 783286, (andrea2.mambretti@mail.polimi.it)\\
 \begin{flushright}
-\emph{Report for the master course of real time operative system}\\
+\emph{Report for the master course of real time operating system}\\
 \emph{Reviser: PhD. Patrick Bellasi (bellasi@elet.polimi.it)}
 \end{flushright}
 
@@ -338,17 +338,17 @@ that the code was not correct and it didn't compile. I requested to them a worki
 and I fixed the bug in the testapplication provided. I will give you all the links to the fixed version
 in the following subsections.
 
-\subsection{OS installation and drivers installation}
+\subsection{OS and drivers installation}
     Before everything, we have to install the OS. During my project I decided to test it on Gentoo linux 32 bit.
     I had problems with it because NVIDIA doesn't release official drivers for that specific distro and the drivers
     provided by the gentoo developers did not work properely to this kind of application. So I decided to move
     everything on the Operating System used by the authors.
     This hybrid scheduler has been built on a Ubuntu 10.04.4 LTS.
-    You can download the ISO image from the following link\\
-    \href{https://mega.co.nz/#!IodSWLZS!FHynfh_DNqm0Kb1rWb9ckX_uT68BPhaFthWQh34EuWk}{Ubuntu ISO Image}\\
-    Either burn it on a cd-rom (using eg. k3b, brazero) or create a bootable pendrive (look at this guide \href{https://help.ubuntu.com/community/Installation/FromUSBStick}{FromUSBStick})\\
+    You can download the ISO image from the following link:\\
+    \href{https://mega.co.nz/#!IodSWLZS!FHynfh_DNqm0Kb1rWb9ckX_uT68BPhaFthWQh34EuWk}{Ubuntu ISO Image.}\\
+    Either burn it on a cd-rom (using eg. k3b, brazero) or create a bootable pendrive (look at this guide \href{https://help.ubuntu.com/community/Installation/FromUSBStick}{FromUSBStick}).\\
     Install the Ubuntu distro on a either a laptop or a PC where is plugged in an accelerators (in our specific case an NVIDIA graphics card)
-    To do  so look at the \href{https://help.ubuntu.com/10.04/installation-guide/i386/}{Ubuntu 10.04 Installation Guide}\\
+    To do  so look at the \href{https://help.ubuntu.com/10.04/installation-guide/i386/}{Ubuntu 10.04 Installation Guide.}\\
     Ubuntu as default installs non-proprietary drivers (nouveou) that don't allow to program the graphic card. We have to remove them and install the proprietary driver provided from nvidia.
 \end{multicols}
 \begin{figure}[H]
@@ -357,7 +357,7 @@ in the following subsections.
 \end{figure}
 \begin{multicols}{2}
     This scheduler has been developed in 2010 when the driver version was 3.1. I tried to use it with the most recent 5.0 but given a possible change to the APIs it returns a runtime error.
-    The driver that I used are downloadable from \href{https://mega.co.nz/#!g49wnBaR!eVaf8DeGmDyPUV8VoJMtHRAHXDE4_-EWxwrmL6LCHWY}{NVIDIA dev-driver 3.1}\\
+    The driver that I used are downloadable from \href{https://mega.co.nz/#!g49wnBaR!eVaf8DeGmDyPUV8VoJMtHRAHXDE4_-EWxwrmL6LCHWY}{NVIDIA dev-driver 3.1.}\\
     To install it run in a terminal as root the commands (NB the X server has to be shutted down)
   \lstset{
       basicstyle=\ttfamily\footnotesize,
@@ -375,28 +375,29 @@ in the following subsections.
 #chmod u+rx devdriver_3.1_linux*.run
 #./devdriver_3.1_linux_32_256.40.run
 \end{lstlisting}
-    The second step to have our cuda framework working is to install the \href{https://mega.co.nz/#!d1FD0TiS!PusMUXIuLJzxiM_hh4ABi1ltWvAIARZutZR3wIR4TEU}{NVIDIA SDK}\\
-    The commands to install it are
+    The second step to have our cuda framework working is to install the \href{https://mega.co.nz/#!d1FD0TiS!PusMUXIuLJzxiM_hh4ABi1ltWvAIARZutZR3wIR4TEU}{NVIDIA SDK.}\\
+    The commands to install it are:
 \begin{lstlisting}
 #chmod u+rx gpucomputingsdk*.run
 #./gpucomputingsdk_3.1_linux.run
 \end{lstlisting}
-    Are useful but not necessarily the toolkits provided by nvidia downloadable from \href{https://mega.co.nz/#!88kFCCJL!FmqUdQHY0VE00V5aQOcTQRuaufw9bZ6AS7ZyfQGXiSc} {Toolkits}\\
-    As before to install the toolkits run the commands
+    Are useful but not necessarily the toolkits provided by nvidia, downloadable from \href{https://mega.co.nz/#!88kFCCJL!FmqUdQHY0VE00V5aQOcTQRuaufw9bZ6AS7ZyfQGXiSc} {Toolkits.}\\
+    As before to install the toolkits run the commands:
 \begin{lstlisting}
 #chmod u+rx cudatoolkit_3.1*.run
+#./cudatoolkit_3.1*.run
 \end{lstlisting}
-    We can use the following commands to check if the drivers and the tools are correctly installed
+    We can use the following commands to check if the drivers and the tools are correctly installed:
     \begin{itemize}
-        \item{{\bf nvcc} is the most important tool. It's the NVIDIA compiler for cuda}
+        \item{{\bf nvcc} is the most important tool. It's the NVIDIA compiler for cuda.}
             \begin{figure}[H]
                 \includegraphics[width=8cm]{eps/nvcc.eps}
             \end{figure}
-        \item{{\bf nvidia-smi} allow us to see which graphic units are installed on our machine}
+        \item{{\bf nvidia-smi} allow us to see which graphic units are installed on our machine.}
             \begin{figure}[H]
                 \includegraphics[width=7cm]{eps/nvidia-smi.eps}
             \end{figure}
-        \item{{\bf lsmod} program let us know if the kernel module 'nvidia' is loaded and used by the linux kernel}
+        \item{{\bf lsmod} program let us know if the kernel module 'nvidia' is loaded and used by the linux kernel.}
             \begin{figure}[H]
                 \includegraphics[width=7cm]{eps/lsmod.eps}
             \end{figure}
@@ -404,7 +405,7 @@ in the following subsections.
 
 \subsection{Kernel download and patching \cite{kernel}}
     Now that we have the OS properely installed and configured we have to download the \href{www.kernel.org}{kernel}\\
-    Either we download the tar.gz of  the right version (2.6.32.57, skip the first list of commands look at only the patch) or we clone the git repository running the following commands (The hardest way):\\
+    Either we download the tar.gz of  the right version (2.6.32.57, skip the first list of commands look at only the patch) or we clone the kernel git repository running the following commands (The hardest way):\\
     \begin{lstlisting}
 #cd /usr/src/
 #git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git linux-stable
@@ -631,6 +632,23 @@ sudo update-grub
         Now we have to run the test so we need to compile  the testapplication as described above and 
         then we can run the bash script provided in the same folder to take in count the time of the execution.
         We will notice a lot of output on the screen. It's the description of what is appening.
+        In function of the number of batch defined for the specific worker. The batch number means the distance
+        between two checkpoints. Defines how many generated brute-force strings two adjacent checkpoints of
+        this worker are apart on a GPU. If we, during the testapplication execution,  list the units registered 
+        by the scheduler  we will notice that close to the type of units there is the number of tasks running
+        for each unit.\\
+        To have information about the time we can use the bash script provided to run the test:
+\begin{lstlisting}
+>chmod u+rx timeTestapp.sh
+>./timeTestapp.sh
+\end{lstlisting}
+
+\section{Conclusions and future work}
+This work main goal was to provide a detailed guide to the installation of the this hybrid scheduler.
+To give a visible view of the working scheduler I also published a \href{http://www.youtube.com/watch?v=91RHioPsrEs}{ youtube video }.
+This work also include fixes to the original project to allow an happyful installation to who wants to extend it.
+As future works we have the porting to a more recent version of both kernel and cuda sdk, we have the integration and test
+with also other kind of accelerators (such as FPGA).
 %-----------------------------------------------------------------------------
 
 % We suggest the use of JabRef for editing your bibliography file (Report.bib)
